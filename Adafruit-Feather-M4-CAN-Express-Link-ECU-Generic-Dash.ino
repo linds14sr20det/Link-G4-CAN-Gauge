@@ -33,6 +33,7 @@ signed int coolantTemperature = 0;
 signed int oilTemperature = 0; 
 float oilPressure = 0;
 
+float blinkTimeMS = 0;
 
 #ifdef ESP8266
    #define TFT_CS   0
@@ -108,8 +109,6 @@ void setup() {
 
   // Print a message to say we are now running
   Serial.println("Generic Dash CAN receiver started.");
-
-  printShiftLight();
 }
 
 void CANReceiveCallback(int packetSize) {
@@ -299,16 +298,38 @@ unsigned long printOilPressure() {
 
 unsigned long printShiftLight() {
   unsigned long start;
-  
-  tft.fillCircle(60, 20, 20, HX8357_RED);
-  tft.fillCircle(120, 20, 20, HX8357_YELLOW);
-  tft.fillCircle(180, 20, 20, HX8357_GREEN);
-  tft.fillCircle(240, 20, 20, HX8357_GREEN);
-  tft.fillCircle(300, 20, 20, HX8357_GREEN);
-  tft.fillCircle(360, 20, 20, HX8357_YELLOW);
-  tft.fillCircle(420, 20, 20, HX8357_RED);
 
-
+  Serial.println(micros());
+  Serial.println("");
+  if ((micros()/100000)%2) {
+    if(RPM > 7400) {
+      tft.fillCircle(60, 20, 20, HX8357_RED);
+      tft.fillCircle(120, 20, 20, HX8357_YELLOW);
+      tft.fillCircle(180, 20, 20, HX8357_GREEN);
+      tft.fillCircle(240, 20, 20, HX8357_GREEN);
+      tft.fillCircle(300, 20, 20, HX8357_GREEN);
+      tft.fillCircle(360, 20, 20, HX8357_YELLOW);
+      tft.fillCircle(420, 20, 20, HX8357_RED);
+    } else if (RPM > 7100) {
+      tft.fillCircle(120, 20, 20, HX8357_YELLOW);
+      tft.fillCircle(180, 20, 20, HX8357_GREEN);
+      tft.fillCircle(240, 20, 20, HX8357_GREEN);
+      tft.fillCircle(300, 20, 20, HX8357_GREEN);
+      tft.fillCircle(360, 20, 20, HX8357_YELLOW);
+    } else if (RPM > 6800) {
+      tft.fillCircle(180, 20, 20, HX8357_GREEN);
+      tft.fillCircle(240, 20, 20, HX8357_GREEN);
+      tft.fillCircle(300, 20, 20, HX8357_GREEN);
+    }
+  } else {
+    tft.fillCircle(60, 20, 20, HX8357_BLACK);
+    tft.fillCircle(120, 20, 20, HX8357_BLACK);
+    tft.fillCircle(180, 20, 20, HX8357_BLACK);
+    tft.fillCircle(240, 20, 20, HX8357_BLACK);
+    tft.fillCircle(300, 20, 20, HX8357_BLACK);
+    tft.fillCircle(360, 20, 20, HX8357_BLACK);
+    tft.fillCircle(420, 20, 20, HX8357_BLACK);
+  }
   return micros() - start;
 }
 
@@ -321,11 +342,10 @@ void loop() {
     updateDisplayMillis = currentMillis;
     
     RPM = (signed int)getGenericDashValue(GenericDash, ECU_ENGINE_SPEED_RPM);
-    // RPM += 10;
+    //  RPM = 7500;
     Serial.print("RPM: "); Serial.print(RPM); Serial.println(" RPM");
     printRPM();
     
-
 
     airFuelRatio = (float)getGenericDashValue(GenericDash, ECU_LAMBDA_1_LAMBDA);
     // airFuelRatio = 14.7;
@@ -356,5 +376,7 @@ void loop() {
     Serial.print("Oil Pressure: "); Serial.print(oilPressure); Serial.println(" PSI");
     Serial.println("");
     printOilPressure();
+
+    printShiftLight();
   }
 }
