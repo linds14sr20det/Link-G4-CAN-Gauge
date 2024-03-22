@@ -7,7 +7,7 @@
 
 // Serial port configuration
 #define SERIAL_BAUD 9600
-#define SERIAL_UPDATE_MILLISECONDS 10
+#define SERIAL_UPDATE_MILLISECONDS 200
 
 // No user-serviceable parts below unless you REALLY know what you are doing
 

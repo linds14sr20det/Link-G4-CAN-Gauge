@@ -9,6 +9,8 @@
 // Written by JBG 20211121
 //
 
+//NOTE: White wire is Can Hi, Blue wire is Can Lo
+
 // Local header file with configuration and constants for each value
 #include "Adafruit-Feather-M4-CAN-Express-Link-ECU-Generic-Dash.h"
 
@@ -16,6 +18,8 @@
 #include <SPI.h>
 #include "Adafruit_GFX.h"
 #include "Adafruit_HX8357.h"
+#include <Adafruit_SPIFlash.h>    // SPI / QSPI flash library
+#include <Adafruit_ImageReader.h> // Image-reading functions
 
 #define maximumPacketSize 64
 int nextCANByte;
@@ -27,7 +31,7 @@ unsigned long updateDisplayMillis = 0;
 unsigned long updateDisplayMilliRate = SERIAL_UPDATE_MILLISECONDS; // Milliseconds between serial updates
 
 signed int RPM = 0;
-float boostPressure = 137 * -0.145038; 
+float boostPressure = 0; 
 float airFuelRatio = 0;  
 signed int coolantTemperature = 0; 
 signed int oilTemperature = 0; 
@@ -60,6 +64,22 @@ float blinkTimeMS = 0;
 #endif
 
 #define TFT_RST -1
+
+
+// SPI or QSPI flash filesystem (i.e. CIRCUITPY drive)
+  #if defined(__SAMD51__) || defined(NRF52840_XXAA)
+    Adafruit_FlashTransport_QSPI flashTransport(PIN_QSPI_SCK, PIN_QSPI_CS,
+      PIN_QSPI_IO0, PIN_QSPI_IO1, PIN_QSPI_IO2, PIN_QSPI_IO3);
+  #else
+    #if (SPI_INTERFACES_COUNT == 1)
+      Adafruit_FlashTransport_SPI flashTransport(SS, &SPI);
+    #else
+      Adafruit_FlashTransport_SPI flashTransport(SS1, &SPI1);
+    #endif
+  #endif
+  Adafruit_SPIFlash    flash(&flashTransport);
+  FatFileSystem        filesys;
+  Adafruit_ImageReader reader(filesys); // Image-reader, pass in flash filesys
 
 // Use hardware SPI and the above for CS/DC
 Adafruit_HX8357 tft = Adafruit_HX8357(TFT_CS, TFT_DC, TFT_RST);
@@ -109,6 +129,20 @@ void setup() {
 
   // Print a message to say we are now running
   Serial.println("Generic Dash CAN receiver started.");
+
+  if(!flash.begin()) {
+    Serial.println(F("flash begin() failed"));
+    for(;;);
+  }
+  if(!filesys.begin(&flash)) {
+    Serial.println(F("filesys begin() failed"));
+    for(;;);
+  }
+
+  delay(5000);
+  ImageReturnCode stat;
+  stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 165, 0);
+  reader.printStatus(stat);   // How'd we do?
 }
 
 void CANReceiveCallback(int packetSize) {
@@ -347,7 +381,7 @@ void loop() {
     printRPM();
     
 
-    airFuelRatio = (float)getGenericDashValue(GenericDash, ECU_LAMBDA_1_LAMBDA);
+    airFuelRatio = ((float)getGenericDashValue(GenericDash, ECU_LAMBDA_1_LAMBDA))*14.7;
     // airFuelRatio = 14.7;
     Serial.print("AFR: "); Serial.println(airFuelRatio);
     printAFR();
