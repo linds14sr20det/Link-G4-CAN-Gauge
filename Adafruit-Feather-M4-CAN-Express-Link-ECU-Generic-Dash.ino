@@ -32,7 +32,7 @@ unsigned long updateDisplayMilliRate = SERIAL_UPDATE_MILLISECONDS; // Millisecon
 
 signed int RPM = 0;
 float airFuelRatio = 0; 
-signed int knockLevel = 0; 
+signed int knockCount = 0; 
 float boostPressure = 0; 
 signed int coolantTemperature = 0; 
 signed int oilTemperature = 0; 
@@ -148,7 +148,6 @@ void setup() {
 
 void CANReceiveCallback(int packetSize) {
   // We have received a CAN packet, process it below
-  // strip.setPixelColor(0, PIXEL_RED); strip.show();
 
   switch (CAN.packetId()) {
     case ECU_HEADER:
@@ -203,7 +202,7 @@ unsigned long printRPM() {
   unsigned long start;
 
   char sensorValue[5];
-  snprintf(sensorValue, 5, "%-3d", RPM); // Left-justified message
+  snprintf(sensorValue, 5, "%-4d", RPM); // Left-justified message
   
   tft.setCursor(10, 60);
   tft.setTextColor(HX8357_WHITE, HX8357_BLACK);  tft.setTextSize(4);
@@ -238,14 +237,14 @@ unsigned long printAFR() {
   return micros() - start;
 }
 
-unsigned long printKnockLevel() {
+unsigned long printKnockCount() {
   unsigned long start;
   
   char sensorValue[5];
-  snprintf(sensorValue, 5, "%-3d", knockLevel); // Left-justified message
+  snprintf(sensorValue, 5, "%-4d", knockCount); // Left-justified message
 
   int backgroundColor = HX8357_BLACK;
-  if (knockLevel > 0) {
+  if (knockCount > 0) {
     backgroundColor = HX8357_RED;
   }
   
@@ -368,7 +367,6 @@ unsigned long printSportMode() {
   unsigned long start;
  
   if(sportMode == 1) {
-    Serial.println("should be hbitting this");
     tft.fillCircle(180, 290, 20, HX8357_RED);
   } else {
     tft.fillCircle(180, 290, 20, HX8357_BLACK);
@@ -434,10 +432,10 @@ void loop() {
     // printAFR();
 
 
-    knockLevel = ((float)getGenericDashValue(GenericDash, ECU_KNOCK_LEVEL_DETECTED));
-    // knockLevel = 10.7;
-    Serial.print("Knock level: "); Serial.println(knockLevel);
-    printKnockLevel();
+    knockCount = ((signed int)getGenericDashValue(GenericDash, ECU_KNOCK_COUNT_GLOBAL));
+    // knockCount = 10.7;
+    Serial.print("Knock level: "); Serial.println(knockCount);
+    printKnockCount();
 
 
     boostPressure = ((signed int)getGenericDashValue(GenericDash, ECU_MGP_KPA)) * 0.145038;

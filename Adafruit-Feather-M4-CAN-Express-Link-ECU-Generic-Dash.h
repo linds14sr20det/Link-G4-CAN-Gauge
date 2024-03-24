@@ -51,7 +51,7 @@ enum GenericDashParameters {
   ECU_KNOCK_LEVEL_6_COUNT,
   ECU_KNOCK_LEVEL_7_COUNT,
   ECU_KNOCK_LEVEL_8_COUNT,
-  ECU_KNOCK_LEVEL_DETECTED,
+  ECU_KNOCK_COUNT_GLOBAL,
   ECU_LIMIT_FLAGS_BITFIELD,
   ECU_SPORT_MODE,
   ECU_LAUNCH_CONTROL_STATUS
@@ -76,7 +76,7 @@ enum GenericDashParameters {
 #define LIMITS_FLAG_CYCLIC_IDLE_ACTIVE          15
 
 // Constants used by GenericDash multi-dimensional array - DO NOT CHANGE THESE
-#define GenericDashFrames 13
+#define GenericDashFrames 14
 #define GenericDashBytes 8
 
 // Function to get a specific value from the Generic Dash buffer
@@ -200,13 +200,13 @@ float getGenericDashValue(volatile unsigned char dataList[GenericDashFrames][Gen
       return (signed int)((dataList[12][7] << 8) + (dataList[12][6] << 0));
       break;
     case ECU_SPORT_MODE:
-      return (signed int)((dataList[13][3] << 8) + (dataList[12][2] << 0));
+      return (signed int)((dataList[13][3] << 8) + (dataList[13][2] << 0));
       break;
     case ECU_LAUNCH_CONTROL_STATUS:
-      return (signed int)((dataList[13][5] << 8) + (dataList[12][4] << 0));
+      return (signed int)((dataList[13][5] << 8) + (dataList[13][4] << 0));
       break;
-    case ECU_KNOCK_LEVEL_DETECTED:
-      return (signed int)((dataList[13][7] << 8) + (dataList[12][6] << 0));
+    case ECU_KNOCK_COUNT_GLOBAL:
+      return (signed int)((dataList[13][7] << 8) + (dataList[13][6] << 0));
       break;
     default:
       return -1;
