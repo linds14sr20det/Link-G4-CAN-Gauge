@@ -7,7 +7,7 @@
 
 // Serial port configuration
 #define SERIAL_BAUD 9600
-#define SERIAL_UPDATE_MILLISECONDS 200
+#define SERIAL_UPDATE_MILLISECONDS 100
 
 // No user-serviceable parts below unless you REALLY know what you are doing
 
@@ -51,7 +51,10 @@ enum GenericDashParameters {
   ECU_KNOCK_LEVEL_6_COUNT,
   ECU_KNOCK_LEVEL_7_COUNT,
   ECU_KNOCK_LEVEL_8_COUNT,
-  ECU_LIMIT_FLAGS_BITFIELD
+  ECU_KNOCK_LEVEL_DETECTED,
+  ECU_LIMIT_FLAGS_BITFIELD,
+  ECU_SPORT_MODE,
+  ECU_LAUNCH_CONTROL_STATUS
 };
 
 // List of known limits flags sent as ECU_LIMIT_FLAGS_BITFIELD
@@ -195,6 +198,15 @@ float getGenericDashValue(volatile unsigned char dataList[GenericDashFrames][Gen
       break;
     case ECU_LIMIT_FLAGS_BITFIELD:
       return (signed int)((dataList[12][7] << 8) + (dataList[12][6] << 0));
+      break;
+    case ECU_SPORT_MODE:
+      return (signed int)((dataList[13][3] << 8) + (dataList[12][2] << 0));
+      break;
+    case ECU_LAUNCH_CONTROL_STATUS:
+      return (signed int)((dataList[13][5] << 8) + (dataList[12][4] << 0));
+      break;
+    case ECU_KNOCK_LEVEL_DETECTED:
+      return (signed int)((dataList[13][7] << 8) + (dataList[12][6] << 0));
       break;
     default:
       return -1;

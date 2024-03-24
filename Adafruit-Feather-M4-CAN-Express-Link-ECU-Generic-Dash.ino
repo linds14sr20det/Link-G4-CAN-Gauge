@@ -31,13 +31,14 @@ unsigned long updateDisplayMillis = 0;
 unsigned long updateDisplayMilliRate = SERIAL_UPDATE_MILLISECONDS; // Milliseconds between serial updates
 
 signed int RPM = 0;
+float airFuelRatio = 0; 
+signed int knockLevel = 0; 
 float boostPressure = 0; 
-float airFuelRatio = 0;  
 signed int coolantTemperature = 0; 
 signed int oilTemperature = 0; 
 float oilPressure = 0;
-
-float blinkTimeMS = 0;
+signed int sportMode = 0;
+signed int launchControl = 0;
 
 #ifdef ESP8266
    #define TFT_CS   0
@@ -139,10 +140,10 @@ void setup() {
     for(;;);
   }
 
-  delay(5000);
   ImageReturnCode stat;
-  stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 165, 0);
+  stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 155, 93);
   reader.printStatus(stat);   // How'd we do?
+  delay(1000);
 }
 
 void CANReceiveCallback(int packetSize) {
@@ -233,6 +234,27 @@ unsigned long printAFR() {
   tft.setCursor(10, 192);
   tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
   tft.println("AFR");
+
+  return micros() - start;
+}
+
+unsigned long printKnockLevel() {
+  unsigned long start;
+  
+  char sensorValue[5];
+  snprintf(sensorValue, 5, "%-3d", knockLevel); // Left-justified message
+
+  int backgroundColor = HX8357_BLACK;
+  if (knockLevel > 0) {
+    backgroundColor = HX8357_RED;
+  }
+  
+  tft.setCursor(10, 160);
+  tft.setTextColor(HX8357_WHITE, backgroundColor);  tft.setTextSize(4);
+  tft.print(sensorValue);
+  tft.setCursor(10, 192);
+  tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
+  tft.println("KNOCK");
 
   return micros() - start;
 }
@@ -330,6 +352,31 @@ unsigned long printOilPressure() {
   return micros() - start;
 }
 
+unsigned long printLaunchControl() {
+  unsigned long start;
+
+  if(launchControl == 1) {
+    tft.fillCircle(300, 290, 20, HX8357_GREEN);
+  } else {
+    tft.fillCircle(300, 290, 20, HX8357_BLACK);
+  }
+
+  return micros() - start;
+}
+
+unsigned long printSportMode() {
+  unsigned long start;
+ 
+  if(sportMode == 1) {
+    Serial.println("should be hbitting this");
+    tft.fillCircle(180, 290, 20, HX8357_RED);
+  } else {
+    tft.fillCircle(180, 290, 20, HX8357_BLACK);
+  }
+
+  return micros() - start;
+}
+
 unsigned long printShiftLight() {
   unsigned long start;
 
@@ -376,7 +423,7 @@ void loop() {
     updateDisplayMillis = currentMillis;
     
     RPM = (signed int)getGenericDashValue(GenericDash, ECU_ENGINE_SPEED_RPM);
-    //  RPM = 7500;
+    //RPM = 7500;
     Serial.print("RPM: "); Serial.print(RPM); Serial.println(" RPM");
     printRPM();
     
@@ -384,7 +431,13 @@ void loop() {
     airFuelRatio = ((float)getGenericDashValue(GenericDash, ECU_LAMBDA_1_LAMBDA))*14.7;
     // airFuelRatio = 14.7;
     Serial.print("AFR: "); Serial.println(airFuelRatio);
-    printAFR();
+    // printAFR();
+
+
+    knockLevel = ((float)getGenericDashValue(GenericDash, ECU_KNOCK_LEVEL_DETECTED));
+    // knockLevel = 10.7;
+    Serial.print("Knock level: "); Serial.println(knockLevel);
+    printKnockLevel();
 
 
     boostPressure = ((signed int)getGenericDashValue(GenericDash, ECU_MGP_KPA)) * 0.145038;
@@ -408,8 +461,20 @@ void loop() {
     oilPressure = ((signed int)getGenericDashValue(GenericDash, ECU_OIL_PRESSURE_KPA)) * 0.145038;
     // oilPressure = 137 * 0.145038;
     Serial.print("Oil Pressure: "); Serial.print(oilPressure); Serial.println(" PSI");
-    Serial.println("");
     printOilPressure();
+
+
+    launchControl = ((signed int)getGenericDashValue(GenericDash, ECU_LAUNCH_CONTROL_STATUS));
+    // launchControl = 1;
+    Serial.print("Launch Control: "); Serial.println(launchControl);
+    printLaunchControl();
+
+
+    sportMode = ((signed int)getGenericDashValue(GenericDash, ECU_SPORT_MODE));
+    // sportMode = 1;
+    Serial.print("Sport Mode: "); Serial.println(sportMode);
+    Serial.println("");
+    printSportMode();
 
     printShiftLight();
   }
