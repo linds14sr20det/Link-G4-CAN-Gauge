@@ -38,7 +38,10 @@ signed int coolantTemperature = 0;
 signed int oilTemperature = 0; 
 float oilPressure = 0;
 signed int sportMode = 0;
-signed int launchControl = 0;
+signed int gearPosition = 0;
+signed int sportModeImage = 0;
+
+#define NISSAN_RED 0xA800
 
 #ifdef ESP8266
    #define TFT_CS   0
@@ -141,8 +144,27 @@ void setup() {
   }
 
   ImageReturnCode stat;
-  stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 155, 93);
+  stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 155, 103);
   reader.printStatus(stat);   // How'd we do?
+
+  tft.fillRoundRect(215, 0, 50, 62, 5, NISSAN_RED);
+  tft.fillRoundRect(218, 3, 44, 56, 2, HX8357_BLACK);
+
+  printSubTitles();
+
+  tft.fillCircle(60, 20, 20, 0x8800);
+  tft.fillCircle(120, 20, 20, 0x6B40);
+  tft.fillCircle(180, 20, 20, 0x0400);
+  tft.fillCircle(300, 20, 20, 0x0400);
+  tft.fillCircle(360, 20, 20, 0x6B40);
+  tft.fillCircle(420, 20, 20, 0x8800);
+  tft.fillCircle(60, 20, 19, HX8357_BLACK);
+  tft.fillCircle(120, 20, 19, HX8357_BLACK);
+  tft.fillCircle(180, 20, 19, HX8357_BLACK);
+  tft.fillCircle(300, 20, 19, HX8357_BLACK);
+  tft.fillCircle(360, 20, 19, HX8357_BLACK);
+  tft.fillCircle(420, 20, 19, HX8357_BLACK);
+
   delay(1000);
 }
 
@@ -186,17 +208,36 @@ void CANReceiveCallback(int packetSize) {
   }
 }
 
-// unsigned int getBetweenColourByPercent(float value = 0.5 /* 0-1 */, unsigned int highColor = 0x0000FF, unsigned int lowColor = 0xFF0000) {
-//     unsigned int r = highColor >> 16;
-//     unsigned int g = highColor >> 8 & 0xFF;
-//     unsigned int b = highColor & 0xFF;
+void printSubTitles() {
+  int textColor = HX8357_CYAN;
+  if (sportMode == 1) {
+    textColor = 0xA800;
+  }
 
-//     r += ((lowColor >> 16) - r) * value;
-//     g += ((lowColor >> 8 & 0xFF) - g) * value;
-//     b += ((lowColor & 0xFF) - b) * value;
+  tft.setCursor(10, 94);
+  tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
+  tft.println("RPM");
 
-//     return (r << 16 | g << 8 | b);
-// }
+  tft.setCursor(10, 194);
+  tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
+  tft.println("KNOCK");
+
+  tft.setCursor(10, 294);
+  tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
+  tft.println("BOOST");
+
+  tft.setCursor(380, 94);
+  tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
+  tft.println("ECT");
+
+  tft.setCursor(380, 194);
+  tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
+  tft.println("Oil Temp");
+
+  tft.setCursor(380, 294);
+  tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
+  tft.println("Oil Pres");
+}
 
 unsigned long printRPM() {
   unsigned long start;
@@ -207,9 +248,6 @@ unsigned long printRPM() {
   tft.setCursor(10, 60);
   tft.setTextColor(HX8357_WHITE, HX8357_BLACK);  tft.setTextSize(4);
   tft.print(sensorValue);
-  tft.setCursor(10, 92);
-  tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
-  tft.println("RPM");
 
   return micros() - start;
 }
@@ -251,10 +289,7 @@ unsigned long printKnockCount() {
   tft.setCursor(10, 160);
   tft.setTextColor(HX8357_WHITE, backgroundColor);  tft.setTextSize(4);
   tft.print(sensorValue);
-  tft.setCursor(10, 192);
-  tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
-  tft.println("KNOCK");
-
+  
   return micros() - start;
 }
 
@@ -278,10 +313,7 @@ unsigned long printBoost() {
   tft.setCursor(10, 260);
   tft.setTextColor(HX8357_WHITE, backgroundColor);  tft.setTextSize(4);
   tft.print(sensorValue);
-  tft.setCursor(10, 292);
-  tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
-  tft.println("BOOST");
-
+  
   return micros() - start;
 }
 
@@ -298,10 +330,7 @@ unsigned long printECT() {
   tft.setCursor(380, 60);
   tft.setTextColor(HX8357_WHITE, backgroundColor);  tft.setTextSize(4);
   tft.print(sensorValue);
-  tft.setCursor(380, 92);
-  tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
-  tft.println("ECT");
-
+ 
   return micros() - start;
 }
 
@@ -318,10 +347,7 @@ unsigned long printOilTemp() {
   tft.setCursor(380, 160);
   tft.setTextColor(HX8357_WHITE, backgroundColor);  tft.setTextSize(4);
   tft.print(sensorValue);
-  tft.setCursor(380, 192);
-  tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
-  tft.println("Oil Temp");
-
+ 
   return micros() - start;
 }
 
@@ -344,21 +370,19 @@ unsigned long printOilPressure() {
   tft.setCursor(380, 260);
   tft.setTextColor(HX8357_WHITE, backgroundColor);  tft.setTextSize(4);
   tft.print(sensorValue);
-  tft.setCursor(380, 292);
-  tft.setTextColor(HX8357_CYAN, HX8357_BLACK);  tft.setTextSize(2);
-  tft.println("Oil Pres");
 
   return micros() - start;
 }
 
-unsigned long printLaunchControl() {
+unsigned long printGearPosition() {
   unsigned long start;
 
-  if(launchControl == 1) {
-    tft.fillCircle(300, 290, 20, HX8357_GREEN);
-  } else {
-    tft.fillCircle(300, 290, 20, HX8357_BLACK);
-  }
+  char sensorValue[2];
+  snprintf(sensorValue, 2, "%-1d", gearPosition); // Left-justified message
+  
+  tft.setCursor(225, 10);
+  tft.setTextColor(HX8357_WHITE, HX8357_BLACK);  tft.setTextSize(6);
+  tft.print(sensorValue);
 
   return micros() - start;
 }
@@ -366,10 +390,12 @@ unsigned long printLaunchControl() {
 unsigned long printSportMode() {
   unsigned long start;
  
-  if(sportMode == 1) {
-    tft.fillCircle(180, 290, 20, HX8357_RED);
-  } else {
-    tft.fillCircle(180, 290, 20, HX8357_BLACK);
+  if(sportMode != sportModeImage) {
+    sportModeImage = sportMode;
+    ImageReturnCode stat;
+    stat = reader.drawBMP("/sd/nissan_logo_red.bmp", tft, 155, 103);
+    reader.printStatus(stat);   // How'd we do?
+    printSubTitles();
   }
 
   return micros() - start;
@@ -385,29 +411,25 @@ unsigned long printShiftLight() {
       tft.fillCircle(60, 20, 20, HX8357_RED);
       tft.fillCircle(120, 20, 20, HX8357_YELLOW);
       tft.fillCircle(180, 20, 20, HX8357_GREEN);
-      tft.fillCircle(240, 20, 20, HX8357_GREEN);
       tft.fillCircle(300, 20, 20, HX8357_GREEN);
       tft.fillCircle(360, 20, 20, HX8357_YELLOW);
       tft.fillCircle(420, 20, 20, HX8357_RED);
     } else if (RPM > 7100) {
       tft.fillCircle(120, 20, 20, HX8357_YELLOW);
       tft.fillCircle(180, 20, 20, HX8357_GREEN);
-      tft.fillCircle(240, 20, 20, HX8357_GREEN);
       tft.fillCircle(300, 20, 20, HX8357_GREEN);
       tft.fillCircle(360, 20, 20, HX8357_YELLOW);
     } else if (RPM > 6800) {
       tft.fillCircle(180, 20, 20, HX8357_GREEN);
-      tft.fillCircle(240, 20, 20, HX8357_GREEN);
       tft.fillCircle(300, 20, 20, HX8357_GREEN);
     }
   } else {
-    tft.fillCircle(60, 20, 20, HX8357_BLACK);
-    tft.fillCircle(120, 20, 20, HX8357_BLACK);
-    tft.fillCircle(180, 20, 20, HX8357_BLACK);
-    tft.fillCircle(240, 20, 20, HX8357_BLACK);
-    tft.fillCircle(300, 20, 20, HX8357_BLACK);
-    tft.fillCircle(360, 20, 20, HX8357_BLACK);
-    tft.fillCircle(420, 20, 20, HX8357_BLACK);
+    tft.fillCircle(60, 20, 19, HX8357_BLACK);
+    tft.fillCircle(120, 20, 19, HX8357_BLACK);
+    tft.fillCircle(180, 20, 19, HX8357_BLACK);
+    tft.fillCircle(300, 20, 19, HX8357_BLACK);
+    tft.fillCircle(360, 20, 19, HX8357_BLACK);
+    tft.fillCircle(420, 20, 19, HX8357_BLACK);
   }
   return micros() - start;
 }
@@ -421,7 +443,7 @@ void loop() {
     updateDisplayMillis = currentMillis;
     
     RPM = (signed int)getGenericDashValue(GenericDash, ECU_ENGINE_SPEED_RPM);
-    //RPM = 7500;
+    // RPM = 7500;
     Serial.print("RPM: "); Serial.print(RPM); Serial.println(" RPM");
     printRPM();
     
@@ -462,10 +484,10 @@ void loop() {
     printOilPressure();
 
 
-    launchControl = ((signed int)getGenericDashValue(GenericDash, ECU_LAUNCH_CONTROL_STATUS));
-    // launchControl = 1;
-    Serial.print("Launch Control: "); Serial.println(launchControl);
-    printLaunchControl();
+    gearPosition = ((signed int)getGenericDashValue(GenericDash, ECU_GEAR_POSITION));
+    // gearPosition = 3;
+    Serial.print("Gear Position: "); Serial.println(gearPosition);
+    printGearPosition();
 
 
     sportMode = ((signed int)getGenericDashValue(GenericDash, ECU_SPORT_MODE));
