@@ -39,7 +39,7 @@ signed int oilTemperature = 0;
 float oilPressure = 0;
 signed int sportMode = 0;
 signed int gearPosition = 0;
-signed int sportModeImage = 0;
+signed int sportModeImage = 1;
 
 #define NISSAN_RED 0xA800
 
@@ -94,6 +94,8 @@ void setup() {
 
   Serial.println("3.5\" HX8357D FeatherWing Test!"); 
 
+  delay(50);
+
   tft.begin();
 
   // read diagnostics (optional but can help debug problems)
@@ -143,9 +145,11 @@ void setup() {
     for(;;);
   }
 
-  ImageReturnCode stat;
-  stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 155, 103);
-  reader.printStatus(stat);   // How'd we do?
+  //turn on the display, we're running now
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
+
+  printSportMode();
 
   tft.fillRoundRect(215, 0, 50, 62, 5, NISSAN_RED);
   tft.fillRoundRect(218, 3, 44, 56, 2, HX8357_BLACK);
@@ -393,9 +397,14 @@ unsigned long printSportMode() {
   if(sportMode != sportModeImage) {
     sportModeImage = sportMode;
     ImageReturnCode stat;
-    stat = reader.drawBMP("/sd/nissan_logo_red.bmp", tft, 155, 103);
-    reader.printStatus(stat);   // How'd we do?
+
+    if(sportMode == 1) {
+      stat = reader.drawBMP("/sd/nissan_logo_red.bmp", tft, 155, 103);
+    } else {
+      stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 155, 103);
+    }
     printSubTitles();
+    reader.printStatus(stat);
   }
 
   return micros() - start;
