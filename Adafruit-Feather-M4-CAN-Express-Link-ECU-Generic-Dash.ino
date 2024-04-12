@@ -44,6 +44,7 @@ float oilPressure = 0;
 signed int sportMode = 0;
 signed int gearPosition = 0;
 signed int sportModeImage = 1;
+signed int sportModeTest = 0;
 
 #define NISSAN_RED 0xA800
 
@@ -426,6 +427,7 @@ unsigned long printSportMode() {
       stat = reader.drawBMP("/sd/nismo_logo.bmp", tft, 140, 280);
     } else {
       stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 155, 103);
+      tft.fillRect(140, 280, 200, 37, HX8357_BLACK);
     }
     printSubTitles();
     reader.printStatus(stat);
@@ -531,7 +533,11 @@ void loop() {
 
 
     sportMode = ((signed int)getGenericDashValue(GenericDash, ECU_SPORT_MODE));
-    // sportMode = 1;
+
+    // sportModeTest += 1;
+    // if (sportModeTest % 100 == 0) {
+    //   sportMode = (sportMode == 0) ? 1 : 0;
+    // }
     Serial.print("Sport Mode: "); Serial.println(sportMode);
     Serial.println("");
     printSportMode();
