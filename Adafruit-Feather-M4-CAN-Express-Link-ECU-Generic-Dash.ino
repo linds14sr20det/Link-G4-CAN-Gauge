@@ -439,30 +439,24 @@ unsigned long printShiftLight() {
 
   Serial.println(micros());
   Serial.println("");
-  if ((micros()/175000)%2) {
+  if ((micros()/60000)%2) {
     if(RPM > 7100) {
-      tft.fillCircle(60, 22, 20, HX8357_RED);
-      tft.fillCircle(120, 22, 20, HX8357_YELLOW);
-      tft.fillCircle(180, 22, 20, HX8357_GREEN);
-      tft.fillCircle(300, 22, 20, HX8357_GREEN);
-      tft.fillCircle(360, 22, 20, HX8357_YELLOW);
-      tft.fillCircle(420, 22, 20, HX8357_RED);
+      tft.fillCircle(60, 22, 19, HX8357_RED);
+      tft.fillCircle(120, 22, 19, HX8357_YELLOW);
+      tft.fillCircle(180, 22, 19, HX8357_GREEN);
+      tft.fillCircle(300, 22, 19, HX8357_GREEN);
+      tft.fillCircle(360, 22, 19, HX8357_YELLOW);
+      tft.fillCircle(420, 22, 19, HX8357_RED);
     } else if (RPM > 6800) {
-      tft.fillCircle(120, 22, 20, HX8357_YELLOW);
-      tft.fillCircle(180, 22, 20, HX8357_GREEN);
-      tft.fillCircle(300, 22, 20, HX8357_GREEN);
-      tft.fillCircle(360, 22, 20, HX8357_YELLOW);
+      tft.fillCircle(120, 22, 19, HX8357_YELLOW);
+      tft.fillCircle(180, 22, 19, HX8357_GREEN);
+      tft.fillCircle(300, 22, 19, HX8357_GREEN);
+      tft.fillCircle(360, 22, 19, HX8357_YELLOW);
     } else if (RPM > 6500) {
-      tft.fillCircle(180, 22, 20, HX8357_GREEN);
-      tft.fillCircle(300, 22, 20, HX8357_GREEN);
+      tft.fillCircle(180, 22, 19, HX8357_GREEN);
+      tft.fillCircle(300, 22, 19, HX8357_GREEN);
     }
   } else {
-    tft.fillCircle(60, 22, 20, 0x8800);
-    tft.fillCircle(120, 22, 20, 0x6B40);
-    tft.fillCircle(180, 22, 20, 0x0400);
-    tft.fillCircle(300, 22, 20, 0x0400);
-    tft.fillCircle(360, 22, 20, 0x6B40);
-    tft.fillCircle(420, 22, 20, 0x8800);
     tft.fillCircle(60, 22, 19, HX8357_BLACK);
     tft.fillCircle(120, 22, 19, HX8357_BLACK);
     tft.fillCircle(180, 22, 19, HX8357_BLACK);
@@ -482,7 +476,7 @@ void loop() {
     updateDisplayMillis = currentMillis;
     
     RPM = (signed int)getGenericDashValue(GenericDash, ECU_ENGINE_SPEED_RPM);
-    RPM = 7150;
+    // RPM = 7150;
     if(RPM > peakRPM) {
       peakRPM = RPM;
     }
