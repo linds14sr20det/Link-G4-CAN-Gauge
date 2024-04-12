@@ -31,11 +31,15 @@ unsigned long updateDisplayMillis = 0;
 unsigned long updateDisplayMilliRate = SERIAL_UPDATE_MILLISECONDS; // Milliseconds between serial updates
 
 signed int RPM = 0;
-float airFuelRatio = 0; 
-signed int knockCount = 0; 
+signed int peakRPM = 0;
+
 float boostPressure = 0; 
+float peakBoostPressure = 0; 
+
+float airFuelRatio = 0; 
 signed int coolantTemperature = 0; 
 signed int oilTemperature = 0; 
+signed int knockCount = 0; 
 float oilPressure = 0;
 signed int sportMode = 0;
 signed int gearPosition = 0;
@@ -156,18 +160,18 @@ void setup() {
 
   printSubTitles();
 
-  tft.fillCircle(60, 20, 20, 0x8800);
-  tft.fillCircle(120, 20, 20, 0x6B40);
-  tft.fillCircle(180, 20, 20, 0x0400);
-  tft.fillCircle(300, 20, 20, 0x0400);
-  tft.fillCircle(360, 20, 20, 0x6B40);
-  tft.fillCircle(420, 20, 20, 0x8800);
-  tft.fillCircle(60, 20, 19, HX8357_BLACK);
-  tft.fillCircle(120, 20, 19, HX8357_BLACK);
-  tft.fillCircle(180, 20, 19, HX8357_BLACK);
-  tft.fillCircle(300, 20, 19, HX8357_BLACK);
-  tft.fillCircle(360, 20, 19, HX8357_BLACK);
-  tft.fillCircle(420, 20, 19, HX8357_BLACK);
+  tft.fillCircle(60, 22, 20, 0x8800);
+  tft.fillCircle(120, 22, 20, 0x6B40);
+  tft.fillCircle(180, 22, 20, 0x0400);
+  tft.fillCircle(300, 22, 20, 0x0400);
+  tft.fillCircle(360, 22, 20, 0x6B40);
+  tft.fillCircle(420, 22, 20, 0x8800);
+  tft.fillCircle(60, 22, 19, HX8357_BLACK);
+  tft.fillCircle(120, 22, 19, HX8357_BLACK);
+  tft.fillCircle(180, 22, 19, HX8357_BLACK);
+  tft.fillCircle(300, 22, 19, HX8357_BLACK);
+  tft.fillCircle(360, 22, 19, HX8357_BLACK);
+  tft.fillCircle(420, 22, 19, HX8357_BLACK);
 
   delay(1000);
 }
@@ -214,9 +218,6 @@ void CANReceiveCallback(int packetSize) {
 
 void printSubTitles() {
   int textColor = HX8357_CYAN;
-  if (sportMode == 1) {
-    textColor = 0xA800;
-  }
 
   tft.setCursor(10, 94);
   tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
@@ -226,7 +227,7 @@ void printSubTitles() {
   tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
   tft.println("KNOCK");
 
-  tft.setCursor(10, 294);
+  tft.setCursor(10, 274);
   tft.setTextColor(textColor, HX8357_BLACK);  tft.setTextSize(2);
   tft.println("BOOST");
 
@@ -252,6 +253,13 @@ unsigned long printRPM() {
   tft.setCursor(10, 60);
   tft.setTextColor(HX8357_WHITE, HX8357_BLACK);  tft.setTextSize(4);
   tft.print(sensorValue);
+
+  char peakValue[5];
+  snprintf(peakValue, 5, "%-4d", peakRPM); // Left-justified message
+  
+  tft.setCursor(10, 115);
+  tft.setTextColor(HX8357_WHITE, HX8357_BLACK);  tft.setTextSize(2);
+  tft.print(peakValue);
 
   return micros() - start;
 }
@@ -314,9 +322,22 @@ unsigned long printBoost() {
     backgroundColor = HX8357_RED;
   }
   
-  tft.setCursor(10, 260);
+  tft.setCursor(10, 240);
   tft.setTextColor(HX8357_WHITE, backgroundColor);  tft.setTextSize(4);
   tft.print(sensorValue);
+
+  char peakValue[5];
+  if (peakBoostPressure < -10) {
+    snprintf(peakValue, 5, "%-4.0f", peakBoostPressure);
+  } else if (peakBoostPressure < 0) {
+   snprintf(peakValue, 5, "%-2.1f", peakBoostPressure);
+  } else { 
+    snprintf(peakValue, 5, "%-4.1f", peakBoostPressure);
+  }
+  
+  tft.setCursor(10, 300);
+  tft.setTextColor(HX8357_WHITE, HX8357_BLACK);  tft.setTextSize(2);
+  tft.print(peakValue);
   
   return micros() - start;
 }
@@ -365,9 +386,11 @@ unsigned long printOilPressure() {
       snprintf(sensorValue, 5, "%4.1f", oilPressure);
   }
 
+  //y = 0.015x – 1.7
+
 
   int backgroundColor = HX8357_BLACK;
-  if (oilPressure < 20) {
+  if (oilPressure < (0.015 * RPM - 1.7) || oilPressure > 46) {
     backgroundColor = HX8357_RED;
   }
 
@@ -400,6 +423,7 @@ unsigned long printSportMode() {
 
     if(sportMode == 1) {
       stat = reader.drawBMP("/sd/nissan_logo_red.bmp", tft, 155, 103);
+      stat = reader.drawBMP("/sd/nismo_logo.bmp", tft, 140, 280);
     } else {
       stat = reader.drawBMP("/sd/nissan_logo.bmp", tft, 155, 103);
     }
@@ -415,30 +439,36 @@ unsigned long printShiftLight() {
 
   Serial.println(micros());
   Serial.println("");
-  if ((micros()/100000)%2) {
-    if(RPM > 7400) {
-      tft.fillCircle(60, 20, 20, HX8357_RED);
-      tft.fillCircle(120, 20, 20, HX8357_YELLOW);
-      tft.fillCircle(180, 20, 20, HX8357_GREEN);
-      tft.fillCircle(300, 20, 20, HX8357_GREEN);
-      tft.fillCircle(360, 20, 20, HX8357_YELLOW);
-      tft.fillCircle(420, 20, 20, HX8357_RED);
-    } else if (RPM > 7100) {
-      tft.fillCircle(120, 20, 20, HX8357_YELLOW);
-      tft.fillCircle(180, 20, 20, HX8357_GREEN);
-      tft.fillCircle(300, 20, 20, HX8357_GREEN);
-      tft.fillCircle(360, 20, 20, HX8357_YELLOW);
+  if ((micros()/175000)%2) {
+    if(RPM > 7100) {
+      tft.fillCircle(60, 22, 20, HX8357_RED);
+      tft.fillCircle(120, 22, 20, HX8357_YELLOW);
+      tft.fillCircle(180, 22, 20, HX8357_GREEN);
+      tft.fillCircle(300, 22, 20, HX8357_GREEN);
+      tft.fillCircle(360, 22, 20, HX8357_YELLOW);
+      tft.fillCircle(420, 22, 20, HX8357_RED);
     } else if (RPM > 6800) {
-      tft.fillCircle(180, 20, 20, HX8357_GREEN);
-      tft.fillCircle(300, 20, 20, HX8357_GREEN);
+      tft.fillCircle(120, 22, 20, HX8357_YELLOW);
+      tft.fillCircle(180, 22, 20, HX8357_GREEN);
+      tft.fillCircle(300, 22, 20, HX8357_GREEN);
+      tft.fillCircle(360, 22, 20, HX8357_YELLOW);
+    } else if (RPM > 6500) {
+      tft.fillCircle(180, 22, 20, HX8357_GREEN);
+      tft.fillCircle(300, 22, 20, HX8357_GREEN);
     }
   } else {
-    tft.fillCircle(60, 20, 19, HX8357_BLACK);
-    tft.fillCircle(120, 20, 19, HX8357_BLACK);
-    tft.fillCircle(180, 20, 19, HX8357_BLACK);
-    tft.fillCircle(300, 20, 19, HX8357_BLACK);
-    tft.fillCircle(360, 20, 19, HX8357_BLACK);
-    tft.fillCircle(420, 20, 19, HX8357_BLACK);
+    tft.fillCircle(60, 22, 20, 0x8800);
+    tft.fillCircle(120, 22, 20, 0x6B40);
+    tft.fillCircle(180, 22, 20, 0x0400);
+    tft.fillCircle(300, 22, 20, 0x0400);
+    tft.fillCircle(360, 22, 20, 0x6B40);
+    tft.fillCircle(420, 22, 20, 0x8800);
+    tft.fillCircle(60, 22, 19, HX8357_BLACK);
+    tft.fillCircle(120, 22, 19, HX8357_BLACK);
+    tft.fillCircle(180, 22, 19, HX8357_BLACK);
+    tft.fillCircle(300, 22, 19, HX8357_BLACK);
+    tft.fillCircle(360, 22, 19, HX8357_BLACK);
+    tft.fillCircle(420, 22, 19, HX8357_BLACK);
   }
   return micros() - start;
 }
@@ -452,10 +482,14 @@ void loop() {
     updateDisplayMillis = currentMillis;
     
     RPM = (signed int)getGenericDashValue(GenericDash, ECU_ENGINE_SPEED_RPM);
-    // RPM = 7500;
+    RPM = 7150;
+    if(RPM > peakRPM) {
+      peakRPM = RPM;
+    }
+    
     Serial.print("RPM: "); Serial.print(RPM); Serial.println(" RPM");
     printRPM();
-    
+  
 
     airFuelRatio = ((float)getGenericDashValue(GenericDash, ECU_LAMBDA_1_LAMBDA))*14.7;
     // airFuelRatio = 14.7;
@@ -471,6 +505,9 @@ void loop() {
 
     boostPressure = ((signed int)getGenericDashValue(GenericDash, ECU_MGP_KPA)) * 0.145038;
     // boostPressure += 1; // 137 * -0.145038;
+    if(boostPressure > peakBoostPressure) {
+      peakBoostPressure = boostPressure;
+    }
     Serial.print("Boost: "); Serial.print(boostPressure); Serial.println(" PSI");
     printBoost();
     
