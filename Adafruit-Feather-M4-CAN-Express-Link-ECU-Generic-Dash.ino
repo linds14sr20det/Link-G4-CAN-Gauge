@@ -391,7 +391,7 @@ unsigned long printOilPressure() {
 
 
   int backgroundColor = HX8357_BLACK;
-  if (oilPressure < (0.015 * RPM - 1.7) || oilPressure > 46) {
+  if (oilPressure < (0.015 * RPM - 1.7) && oilPressure < 46) {
     backgroundColor = HX8357_RED;
   }
 
